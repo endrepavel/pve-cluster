@@ -57,10 +57,10 @@
 #include "server.h"
 
 #define DBFILENAME VARLIBDIR "/config.db"
-#define LOCKFILE VARLIBDIR "/.pmxcfs.lockfile"
+#define LOCKFILE VARLIBDIR "/.cfs.lockfile"
 #define RESTART_FLAG_FILE RUNDIR "/cfs-restart-flag"
 
-#define CFSDIR "/etc/pve"
+#define CFSDIR "/etc/cfs"
 
 cfs_t cfs = {
 	.debug = 0,
@@ -685,19 +685,8 @@ create_symlinks(cfs_plug_base_t *bplug, const char *nodename)
 	g_free(lnktarget);
 	cfs_plug_base_insert(bplug, (cfs_plug_t*)lnk);
 
-	lnktarget = g_strdup_printf("nodes/%s/qemu-server", nodename);
-	lnk = cfs_plug_link_new("qemu-server", lnktarget);
-	g_free(lnktarget);
-	cfs_plug_base_insert(bplug, (cfs_plug_t*)lnk);
-
-	// FIXME: remove openvz stuff for 7.x
-	lnktarget = g_strdup_printf("nodes/%s/openvz", nodename);
-	lnk = cfs_plug_link_new("openvz", lnktarget);
-	g_free(lnktarget);
-	cfs_plug_base_insert(bplug, (cfs_plug_t*)lnk);
-
-	lnktarget = g_strdup_printf("nodes/%s/lxc", nodename);
-	lnk = cfs_plug_link_new("lxc", lnktarget);
+	lnktarget = g_strdup_printf("nodes/%s/haproxy", nodename);
+	lnk = cfs_plug_link_new("haproxy", lnktarget);
 	g_free(lnktarget);
 	cfs_plug_base_insert(bplug, (cfs_plug_t*)lnk);
 
@@ -781,7 +770,7 @@ int main(int argc, char *argv[])
 	dfsm_t *dcdb = NULL;
 	dfsm_t *status_fsm = NULL;
 
-	qb_log_init("pmxcfs", LOG_DAEMON, LOG_DEBUG);
+	qb_log_init("lnxcfs", LOG_DAEMON, LOG_DEBUG);
 	/* remove default filter */
 	qb_log_filter_ctl(QB_LOG_SYSLOG, QB_LOG_FILTER_REMOVE,
 			  QB_LOG_FILTER_FILE, "*", LOG_DEBUG);
@@ -848,9 +837,9 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	struct group *www_data = getgrnam("www-data");
+	struct group *www_data = getgrnam("root");
 	if (!www_data) {
-		cfs_critical("Unable to get www-data group ID");
+		cfs_critical("Unable to get root group ID");
 		qb_log_fini();
 		exit (-1);
 	}
@@ -870,11 +859,11 @@ int main(int argc, char *argv[])
 	for (int i = 10; i >= 0; i--) {
 		if (flock(lockfd, LOCK_EX|LOCK_NB) != 0) {
 			if (!i) {
-				cfs_critical("unable to acquire pmxcfs lock: %s", strerror (errno));
+				cfs_critical("unable to acquire lnxcfs lock: %s", strerror (errno));
 				goto err;
 			}
 			if (i == 10)
-				cfs_message("unable to acquire pmxcfs lock - trying again");
+				cfs_message("unable to acquire lnxcfs lock - trying again");
 
 			sleep(1);
 		}
@@ -1096,7 +1085,7 @@ int main(int argc, char *argv[])
 	if (wrote_pidfile)
 		unlink(CFS_PID_FN);
 
-	cfs_message("exit proxmox configuration filesystem (%d)", ret);
+	cfs_message("exit cfs configuration filesystem (%d)", ret);
 
 	cfs_status_cleanup();
 
