@@ -17,7 +17,8 @@ ARFLAGS = crs
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $< -MMD -MT $@ -MF $@.d
 
-all: pmxcfs create_pmxcfs_db logtest check_memdb
+##all: pmxcfs create_pmxcfs_db logtest check_memdb
+all: pmxcfs
 
 libpmxcfs.a: logger.o loop.o server.o status.o confdb.o quorum.o dcdb.o dfsm.o
 libpmxcfs.a: cfs-plug.o cfs-plug-memdb.o cfs-plug-link.o cfs-plug-func.o
